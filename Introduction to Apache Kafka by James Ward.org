@@ -1,0 +1,642 @@
+#+TITLE: Introduction to Apache Kafka by James Ward
+
+* Integration complexity
+
+
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-12-16 11:12:07
+[[file:Integration complexity/screenshot_2018-12-16_11-12-07.png]]
+
+
+* Things without of Kafka
+
+First thing for the *integration architecture* is using events instead of tables
+as the source of truth for the state of a system.
+
+- POST: get something from the REST API
+- PUT: do an update
+
+
+what we want to do is to feed those *events* sequentially through a *"thing"* ,
+then from that *"thing"* we can feed that data to other system, like a typical
+relational database which would turn those *events* into a creating and update,
+and only keep track of the final state. Or we're going to feed that data into
+some process like doing a count, or do some business analytics against these
+events(足迹推荐). Or we could hook this up to search indexers or to big data
+stores.
+
+what we want to do is to look at the system of truth as being actual *events*
+and keep those around.
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-12-16 11:12:31
+[[file:Integration complexity/screenshot_2018-12-16_11-12-31.png]]
+
+
+
+So now we take those events and start keeping track of all of them and making
+our source, and another thing we need to do is *going back*, *rewind back*, so
+that we *turn off* our processing because there's a problem we need to be able
+to go back in time where we left off or maybe go to reprocess *some of these
+events*.
+
+so this require NOT ONLY a event stream BUT ALSO a *ledger* and a *ledger* is
+something that we can *go back* in time and get the *old data*.
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-12-16 11:13:45
+[[file:Integration complexity/screenshot_2018-12-16_11-13-45.png]]
+
+
+
+So the 3rd way that we address some of these problems with our integration
+architecture, is that "thing" really needs to be distributed from the outside.
+It can not be something that we scale through adding faster hardware to it.
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-12-16 11:16:59
+[[file:Integration complexity/screenshot_2018-12-16_11-16-59.png]]
+
+So may be you wander, *why not message system*.
+
+
+
+* why not message system.
+
+[[file:Integration complexity/screenshot_2018-12-16_13-28-24.png]]
+
+- 1st reason: Ordering
+
+  *Ordering* is really *guaranteed* all the way to the *comsumption* side in the
+  message system. It's not always a *guarantee* that we can rely on. It's pretty
+  important to have *ordering* as a strict *guarantee* when we're relying on
+  that event stream if we get that *create event after update event*, then
+  that's not going to make any sense.
+
+- 2nd reason: Horizontal Scaling
+
+  can we horizontally scale our message system, maybe or maybe not.
+
+- 3rd reason: Push
+
+  Is "push" the right way to do things, might be or might not be. With *push* we
+  have some challenges like what if we have *different speed consumers*, one
+  consumers can process things really fast, one is really slow, how to deal with
+  that situations. How do we do *back pressure*, which is cool thing and
+  reactive programming, how do we do *back pressure* with *push*.
+
+
+These are the reasons message system may not fit to be that data store that we
+want.
+
+
+
+* Kafka Enter, why kafka
+
+** kafka can be an integration hub
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-12-16 13:39:41
+[[file:Kafka Enter./screenshot_2018-12-16_13-39-41.png]]
+
+Kafka can be a central hub of our *integration architecture*, where we can
+*hook* all these different systems and feed all those *events* in and we can
+then *hook* different processes to them different data stores.
+
+
+#+BEGIN_QUOTE
+Kafka = Event Ledger - Distributed & Redundant
+#+END_QUOTE
+
+#+BEGIN_QUOTE
+Kafka = A Distributed Commit Log
+#+END_QUOTE
+Which means that we break that down a log just like you have a log of events in
+the system, and commit log are *append-only*.
+
+
+** kafka can be very speed
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-12-16 13:47:21
+[[file:Kafka Enter./screenshot_2018-12-16_13-47-21.png]]
+
+速度和容量基本是线性的, 这保证了我们的访问速度, 这个速度基本就等于网络传输速度.
+
+* kafka fundamental concepts
+
+[[file:Kafka Enter./screenshot_2018-12-16_14-33-49.png]]
+
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-12-16 15:16:41
+[[file:kafka fundamental concepts/screenshot_2018-12-16_15-16-41.png]]
+
+- 1st: messaging system semantics
+
+- 2nd: Cluster is *Core*
+
+clustering is core in kafka, you would never run a production kafka isntance
+with only one server that just not at all makes sense in the kafka world.
+
+- 3rd: durability & ordering guarantees
+
+* kafka use cases
+
+[[file:Kafka Enter./screenshot_2018-12-16_14-54-03.png]]
+
+- 1st: Modern ETL/CDC
+
+  - ETL: extract, transformation, load.
+  - CDC: change data capture.
+
+  we can definitely use kafka to be this hub, this integration hub for all *the
+  data that's flowing through our system*.
+
+- 2nd: Data Pipelines
+
+  *Data Pipeline* is kind of the more *morden use for Kafka*, and really kind of
+  the use case that kafka is created around, this idea was that: I'm going to have
+  this hub and I'm going to have this hub and I'm going to hook all these things
+  to the hub, so I'm going to hook my search indexer, I'm going to hook my machine
+  learning processing, I'm going to hook my big data storage, *I'm going to build
+  everything off of this kafka hub*. I've got a *lot of different producers*
+  feeding data into kafka and then I've got *lots of different consumers* that are
+  doing all lots of different things using the data, that's the *Data Pipeline*
+  use case.
+
+- 3rd: Big Data Ingest
+
+  A lot of times in our system, we need something that can be big buffer, so it
+  can receive like trillions and trillions of events and be able to buffer that
+  data because the downstream systems may not be able to keep up with the stream
+  of data through the peak times and so we want this buffer to be able to really
+  quickly get that data, record that data and then allow the systems behind it
+  to catch up go back in time if they need to those sorts of things.
+
+
+** DEMO!
+
+   This application can give you an idea kind of a *Data Pipeline*, we can do
+   with kafka.
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-12-16 15:04:59
+[[file:kafka use cases/screenshot_2018-12-16_15-04-59.png]]
+
+
+* what kafka actually is.
+
+Kafka *topics* are divided into a number of *partitions*. *Partitions* allow you
+to *parallelize a topic* by splitting the data in a particular topic across
+multiple *brokers* — each partition can be placed on a separate machine to allow
+for multiple consumers to *read* from a topic in *parallel*.
+
+A Kafka *topic* receives messages across a *distributed* set of *partitions*
+where they are stored. Each *partition* maintains the *messages* it has received
+in a *sequential order* where they(messages) are identified by an *offset*, also
+known as a *position*.
+
+
+** kafka's RECORDS
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-12-16 16:08:45
+[[file:what kafka actually is./screenshot_2018-12-16_16-08-45.png]]
+
+   So first kafka is a *records*, you could also call these *events* or
+   *messages*, different terminology for the same thing. what RECORDS are, they
+   are ~key, value, timestamp~.
+
+   They're *immutable*, once you create a record you can't ever change it, so
+   *there's no +~update~+ operation* in kafka, there's only ~insert~ and
+   ~append~, once we create a record, it's written essentially forever with some
+   caveat(dict:a warning or proviso of specific stipulations, conditions, or
+   limitations).
+
+   They're *persisted*, so it actually persisted to *disk*, one of the cool
+   features of Kafka, it really does a good job of *optimizing storage* because
+   in some messaging system that have *durability* (dict: time region that
+   something avaiable), they'll have a copy of the data in memory in the
+   application and a copy of data on *disk*, and kafka says let's just basically
+   do everything against *disk*, because *disk* have great caching now or the
+   operating systems have great caching around *disk*, so let's just use the
+   *disk*. *So the kafka application is kind of almost lightweight wrapper
+   around just these operations writing to files on disk*.
+
+   也因为以上这些原因,所以我们可以叫 record 也叫作 log.
+
+
+** kafka is PRODUCERES AND CONSUMERS
+
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-12-16 16:13:42
+[[file:what kafka actually is./screenshot_2018-12-16_16-13-42.png]]
+
+"_Consumer reads records from a broker_". This is actually an important thing,
+because kafka is *NOT doing push*. The consumer *connects* to a *broker* and
+*asks* for blocks of *records* basically.
+
+** kafka has TOPICS AND PARTITIONS
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-12-16 16:30:01
+[[file:what kafka actually is./screenshot_2018-12-16_16-30-01.png]]
+
+   *Ordering is guaranteed ONLY for a partition*, so when I'm writing to that
+   'writer' or 'driver' topic, I'm writing to a particular partition within
+   there. And my ordering is ONLY guaranteed for that partition, if I do for
+   some use cases need ordering across the partition, then I can use timestamp
+   as a way to handle that, it gets *a little bit tricky* like what is the
+   ~timestamp~ actually mean for my use case,
+
+   #+BEGIN_QUOTE
+   1. is it the time the event was generated,
+   2. is it the time it's received into kafka,
+   3. ...
+   #+END_QUOTE
+
+   *there're different 'time's* that you can associate with an event. But kafka
+   allows you if you need to use ~timestamp~, *you can choose* which one works
+   for you, you can have kafka automatically timestamp it, when it's received,
+   you can have or provide your own ~timestamp~.
+
+
+** kafka's OFFSETS
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-12-16 16:32:07
+[[file:what kafka actually is./screenshot_2018-12-16_16-32-07.png]]
+
+
+
+- 1st: Unique sequential ID (per partition)
+
+   *Offsets* are the way that we keep track of that *ordering*, and deal with
+    it. So the *offsets* is what's called in kafka is just the *sequential ID*
+    that gets assigned as soon as I write a record to a partition, so whenever I
+    do a write, it's going to say, okey, what's the next integer essentially or
+    next long to associate with that message. So you'll see that in a given
+    topic I'll have the *same offset* IDs across my partitions, but I would
+    *never same offsets* with in a given partition.
+
+- 2nd: Consumers track offsets
+
+  Both the consumer and the kafka worked together to keep track of these
+  offsets, so when I'm a consumer I can ask kafka and say 'give me my offset',
+  if it's *first time* I've ever connected to that topic, then it's going to say
+  your *offset is like '0'* , but if I *disconnect and reconnect* on ask kafka
+  again 'what's my offset', it's going to there's a few different ways that we
+  can tell it to which offset we should *start from*, which one we *left off*.
+
+- 3rd: Benefits: Replay, Different Speed Consumers, etc
+
+  The benifit of the *offset IDs* is we can always go back in time depending on
+  our ~durability window~, how long do we specify these events will *live* ,
+  that could be days, weeks, months... even infinity if you have enough *disk
+  space*, or it could be *amount of storage* that you're using, so you maybe
+  want to say after a terabyte then I want to start ~flushing~ out off the back
+  of this partition.
+
+  Another benifit is now I can have my consumers at different places within
+  reading through the actual messages. So one consumer could be it offset five
+  and another consumer could be all the way down at the head, so that's how we
+  support *different speed consumers* with kafka.
+
+
+** kafka's PRODUCER PARTITIONING
+
+[[file:what kafka actually is./screenshot_2018-12-16_18-24-38.png]]
+
+
+Let's say we have *4* ~brokers~ in our ~cluster~, and we have *1* ~topic~ so
+that ~topic~ is then partitioned into *4* ~pieces~.Here the diagram shows how
+our partitioning works for message production, so we're going to produce a
+message and we produce a message to a given partition within a topic.
+
+
+
+*** Writes are to the leader of a partition
+    we always writing to the leader of a partition, so that's an elected leader,
+    I won't go into the detail of how leader eletection works.
+
+
+*** Partitioning can be done automatically, manually or based on a key
+    Then what happens is that there are followers that will then replicate that
+    data out to other brokers, and we can do this partitioning based on either
+    manually so that would be actually like telling it which number partition we
+    want to use or we can partition based on a key as well.
+
+    默认情况下, if you just produce a message to a topic, it's essentially doing
+    some kind of *round-robin* (dict:a tournament in which each competitor plays
+    in turn against every other.) across the partition. So you can definitely do
+    message production without doing any partitioning and in that case kafka is
+    going to do the paritioning automatically for you, or you can do it manually
+    specify the number of the partition or based on key.
+
+*** Replication Factor is Topic-based
+
+    What we are setting when we setup a topic is we sett the *replication
+    factor* (备份数) in this case our replication factor would be *3*. So we
+    have 3 copy of that data in different broker, one of them is the leader two
+    of them is the followers.
+
+*** Auto-Rebalancing
+
+    自动均衡化所有的 partitions across all the broker in the cluster.
+
+** kafka's CONSUMER GROUP
+
+[[file:what kafka actually is./screenshot_2018-12-16_18-44-23.png]]
+
+*Consumers* always read from *leaders*.
+
+Consumer read data from a topic.
+
+They only have to specify the *topic name* and one *broker* to connect to, and
+kafka will automatically take care of pulling the data from the right brokers.
+
+Data is read in-order for each partitions from the topic.
+
+[[file:what kafka actually is./screenshot_2018-12-16_20-55-01.png]]
+
+It's important to note that the consumer consume the data in *parallel* for
+partition-0 and partition-1, but within each partition for example partition-0,
+the consumer will see message-0 then message-1, then 2, 3, ... so messages are
+*read in order within each partition*.
+
+#+BEGIN_QUOTE
+- consumer consume the data sequentially within each partition.
+- consumer consume the data parallel across the partitions.
+#+END_QUOTE
+
+Consumer are grouped into *consumer groups*, the reason for this is that to
+*enchance the parallelism*. Each *consumer* within a group will read from one or
+more *partitions* but they're all *exclusive* to each other within a group, the
+result is that you *cannot have more consumers than partitions* otherwise some
+will just do nothing.
+
+
+
+
+The *consumer groups* are how we do scale out of paritioning and dealing with
+partitions on the consumer side, so I've got my parititons right and I've got a
+group of nodes that's all going to be consuming data from a topic.
+
+I get a message into partition-0 on server-1, I don't want that message to be
+delivered to both nodes that processing the same data, I want to have the scale
+out so that I can add a bunch of nodes to do processing in parallel, but I
+really don't across to what we call a consumer group, I really don't want to
+have that message delivered multiple times to multiple nodes within my consumer
+group.
+
+
+- 1st: Logical name for 1 or more consumers
+- 2nd: Message consumption is load balanced across all consumers in a group
+
+So kafka takes care of that for us through consumer groups, so really what a
+consumer group is, it's a logical name for one or more consumers. Then the
+message consumption is load balance across to the different consumer nodes
+within a consumer group
+
+** more about the kafka from another youtube video
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-12-16 21:04:00
+[[file:what kafka actually is./screenshot_2018-12-16_21-04-00.png]]
+
+
+But how do consumer know where to read from. The answer is consumer *offsets*.
+
+So remeber the offsets at 0,1,2,3 ... up to 11, whatever, it's increasing for
+each partition. well kafka store the offsets at which a consumer group will have
+been reading. So that offsets storage is actully stored in a kafka topic name
+
+the offsets commit live in a kafka topic named "__consumer__offsets",
+
+basically when the consumer has been reading some data and processed it. it will
+be committing offsets.
+
+1. 首先为什么是 "kafka store the offsets at which a consumer group will have
+been reading"
+
+   因为之前说过每个组内的消费者互斥的访问一个 parititon, 那么partition只要维持一
+   份针对"组"的 offset即可, 不需要维护针对每一个消费者的.
+
+2. 为什么是由 partition 来维持这个 offsets.
+
+   为了防止 consumer 宕机的情况, 他是消费者, 是应用程序, 是有可能出现"死掉" 的情
+   况的. 这时候你在其内维持一份 offset 并不可靠.所以维护这个 offset 的任务就自然
+   交给了 cluster 的每个 partition.
+
+
+** kafka's DELIVERY GUARANTEES
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-12-17 22:17:28
+[[file:what kafka actually is./screenshot_2018-12-17_22-17-28.png]]
+
+*** Guarantee for Producer
+
+- 1st: *Async(No Guarantee)*
+
+  For producing messages to kafka, the default way is just to *async*, with async
+  I have *no guarantee that Kafka actually received and recorded a record* when I
+  send it, for performance that's going to be the best, no acknowledgement of
+  being received.
+
+- 2nd: Committed to Leader
+
+  I want to not actually acknowledgement that the message was received or I do
+  want to receive acknowledgement that the message was received *just from the
+  Leader* and *not just received but actually committed to the file* that's
+  underneath kafka.
+
+- 3rd: Committed to Leader & Quorum
+
+  Guarantee that the message not just received by Leader but has also been
+  received by *a quorum of the followers* of that data. Make sure that you're
+  not going to lose any data then you'd want to go with that 3rd option.
+
+
+All this are certainly dependes on your use case, like the scenarios like:
+- 1st: IOT sensor data that you're getting every half second, you can probably
+  just go async.
+
+- 2nd: financial transactions and you probably want to go with the 3rd option.
+
+
+*** Guarantee for Consumer
+
+- 1st: At-least-once(Default)
+
+  Kafka is keeping track of where my consumer is in reading through its offsets,
+  the default is that as consumer I ask for kafka for a block of offsets and
+  Kafka is going to wait and record that *the final offset that I got to*, until
+  I've actually told kafka "hey, I got through all those records", this is
+  at-least-once because *if processing fails midway* through that, then kafka
+  *only knows that I started at the beginning*, but doesn't know how far I got
+  through that block or records. So it potentially redeliver some of those
+  messages.
+
+- 2nd: At-most-once
+
+  what we do is when we ask kafka for that block, we like *right at the
+  beginning*, say "okey, I got all those records", that's means if next time if
+  something fails *halfway through* then kafka is saying okey, I'm just assuming
+  you told me you got through all those records.
+
+
+- 3rd: Effectively-once
+
+  with efficency-once, we're doing *at least once delivery*, but then we have
+  *some way* to make sure that we're not going to reprocess that data, in a way
+  that would be alter the state, by processing the same record more than once.
+  the easiest way to do that, if you have an item potent service, then that's
+  you know it's not actually mutating any state or we can use an unique ID for
+  this event, then we can basically guarantee that "oky, we've already seen this
+  ID, or we're already recorded it, or maybe we recorded it but it's not going
+  to actually change the state again" then we can get effectively once
+  processing.
+
+- 4th: Exactly Once(Maybe)
+
+  In kafka you can keep track of your offset, if you really really really want
+  to do "deliver exactly-once", like you have a transactional DB system, so what
+  you could do is take that offset, and you put it into the same transaction, as
+  the data you're processing, and so if the transaction fails then the recording
+  of where I am in the stream --- what my offset is also not goint to be
+  updated.
+
+  Not kafka has huge difficulty to handle Exactly-Once problem, but this is
+  really hard to any transactional system.
+
+** kafka's COOL FEATURES
+
+*** 1. Log Compaction(压缩)
+
+    It would sure be nice like as this data is streaming in, and I'm writing
+    every single one of these to kafka, but would it be nice to *not to through
+    all that disk space, if they're just duplication*. So kafka can do LOG
+    COMPACTION. How kafka dose is that, there's something like a *sweeper*
+    that's coming *behind the end of the log file*, if you've turned on the log
+    compaction, it'll come through and it will *sweep* through and *compact* the
+    *records with the same key* down into *a single record*. So it's just
+    preserving disk space.
+
+    Then we have *gaps* in our offset IDs in this case but kafka deals with
+    that, so if you ask for *an offset ID* that has been *compacted*, it's going
+    to choose *the one* that it was *compacted into*.
+
+    Essentially, this is a background process that's running on your files that
+    is doing this sweeping from the backside, it *doesn't directly impact your
+    production or consumption*, because that's call working like off the front
+    of the file whereas this is working off the back of the file. So it's just
+    going to be *more disk read and write overhead essentially on your nodes*.
+
+
+*** 2. Disk not Heap
+
+    A lot of messaging systems that do any kind of durability, they basically
+    have *2* copies of the data, *the one in memory* that they're working on and
+    then *the other one on disk* in case things die, but what kafka dose is it
+    just *ONLY use the disk*. The core thinking is just use the cache of disk,
+    the cache is prepared and optmized by Operating System, so just use it.
+
+*** 3. Pagecache to Socket
+
+    This is a modern thing, started on Linux or maybe solaris, it is
+    *optimization* where you can have this really fast *pipeline of data* from
+    disk to a *network socket*, so instead of always going through kafka in the
+    case of like replicating data to other nodes, it doesn't necessarily have to
+    go through the JVM process. It can basically just take a chunk of disk
+    memeory and pipe that directly to network, so really nice efficency for
+    moving the data through the network, there are certainly times where it does
+    need to go be read into Kafka, but for some use cases like replication,
+    doesn't need to, you can just copy straight from disk to the network socket.
+
+*** 4. Balanced Partition and Leaders.
+
+    Kafka is always keeping track the state of cluster and doing this
+    rebalancing of the leaders. So remember they're for each partition there is
+    a leader that was elected and kafka will do that automatically rebalancing,
+    also automatically rebalancing the leaders as well because we have these
+    replicate of the data, we can at any time elect a new leader of a partition,
+    and all of a suddent, the producers and consumers for that partition will
+    connect to the new node automatically, so the kafka client is using
+    zookeeper to understand to get events that new leader is comming, please
+    connect to that new leader.
+
+
+*** 5. Producer and Consumer Quotas.
+
+    Producer or Consumer may just totally saturate a node, and If that's
+    happening, we may want to put some *quotas* (dict:a limited or fixed number
+    or amount of people or things, in particular) around like "okey, how many
+    events per second can particular producers consumers work with.", so that we
+    don't sett full each saturate nodes in the cluster.
+
+
+*** 6. Heroku Kafka
+
+    I didn't want to sett up and manage the zookeeper clusters and the kafka
+    clusters, I just let her could do that, so now I can just ues kafka and not
+    have to worry about the management of it.
+
+
+
+* Client
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-12-19 00:10:57
+[[file:Client/screenshot_2018-12-19_00-10-57.png]]
+
+#+BEGIN_QUOTE
+Typically it is assumed that the server visits the different queues in a cyclic
+manner. Exact results exist for waiting times, marginal queue lengths and joint
+queue lengths at polling epochs in certain models. Mean value analysis
+techniques can be applied to compute average quantities.
+#+END_QUOTE
+
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-12-19 00:15:26
+[[file:Client/screenshot_2018-12-19_00-15-26.png]]
+
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-12-19 00:17:01
+[[file:Client/screenshot_2018-12-19_00-17-01.png]]
+
+
+
+* Basic Connection
+
+#+NAME: Producer
+#+BEGIN_SRC java
+  class Producer{
+      public void send(ProducerData<K,V>) producerData);
+  }
+#+END_SRC
+
+#+NAME: Consumer
+#+BEGIN_SRC java
+  class SimpleConsumer{
+      public ByteBufferMessageSet fetch(FetchRequest request);
+      public long[] getOffsetsBefore(String topic, int partition, long time, int maxNumOffsets);
+  }
+
+  interface ConsumerConnector{
+      public Map<String, List<KafkaStream>> createMessageStreams(Map<String,Int> topicCountMap);
+  }
+#+END_SRC
+
+
+* AKKA Streams
+
+[[file:AKKA Streams/screenshot_2018-12-19_22-43-10.png]]
+
+
+#+NAME: AKKA Streams
+#+BEGIN_SRC scala
+  val source = Source.repeat("hello, world")
+  val sink = Sink.foreach(println)
+  val flow = source to sink
+  flow.run()
+#+END_SRC
+
+* Apache Flink
+
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-12-19 22:54:49
+[[file:Apache Flink/screenshot_2018-12-19_22-54-49.png]]
+
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-12-19 22:55:01
+[[file:Apache Flink/screenshot_2018-12-19_22-55-01.png]]
+
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-12-19 22:55:09
+[[file:Apache Flink/screenshot_2018-12-19_22-55-09.png]]

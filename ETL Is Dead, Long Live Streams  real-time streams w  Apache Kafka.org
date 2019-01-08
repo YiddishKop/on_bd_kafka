@@ -1,0 +1,536 @@
+#+TITLE: ETL Is Dead, Long Live Streams  real-time streams w  Apache Kafka
+* why ETL is bad now
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-12-15 18:09:26
+[[file:screenshot_2018-12-15_18-09-26.png]]
+
+ETL scripts to move data between soures and destinations. This kind of ad-hoc
+manner connecting sources and destinations in a one-off fashinon as they arrive,
+is pre chaotic.
+
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-12-15 18:11:47
+[[file:screenshot_2018-12-15_18-11-47.png]]
+
+
+We will see how transitioning to streams cleans up this mess and works
+towards.
+
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-12-15 18:13:10
+[[file:screenshot_2018-12-15_18-13-10.png]]
+
+This is the idea of having a streaming platform that serves as your central
+nervous system. It allows applications to talk to each other, it allows you
+to stream change logs from databases and make it available to other systems.
+
+* The history of Data Integration
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-12-15 18:32:27
+[[file:The history of Data Integration/screenshot_2018-12-15_18-32-27.png]]
+
+
+[[file:The history of Data Integration/screenshot_2018-12-15_18-32-45.png]]
+
+
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-12-15 18:33:12
+[[file:The history of Data Integration/screenshot_2018-12-15_18-33-12.png]]
+
+* Drawbacks of ETL
+
+ETL has drawbacks
+1. need for a *global schema*
+2. data cleaning and curation is manual and fundamentally *error-prone*
+3. operational cost of ETL is high; it's slow; time and *resource intensive*
+4. *ETL* tools were built to narrowly focus on connecting databases and the data
+   warehouse in a *batch* fashinon
+
+
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-12-15 18:36:19
+[[file:The history of Data Integration/screenshot_2018-12-15_18-36-19.png]]
+
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-12-15 18:38:53
+[[file:The history of Data Integration/screenshot_2018-12-15_18-38-53.png]]
+
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-12-15 18:39:27
+[[file:The history of Data Integration/screenshot_2018-12-15_18-39-27.png]]
+
+A bunch of tools that were built to facilitate exchange of buisness transactions
+*message* between *applications*, Unsuprisingly they used *Enterprise Service
+Bus* underneath the covers or *enterprise messaging queues* underneath the
+covers. The problem was that these *MQ* worked for *samll scale* data, they were
+just not designed to handle the scale of data that is required for modern data
+sets like logs and sensors.
+
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-12-15 20:07:24
+[[file:The history of Data Integration/screenshot_2018-12-15_20-07-24.png]]
+
+* Need a streaming platform
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-12-15 20:08:01
+[[file:The history of Data Integration/screenshot_2018-12-15_20-08-01.png]]
+
+
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-12-15 20:08:44
+[[file:The history of Data Integration/screenshot_2018-12-15_20-08-44.png]]
+
+- 1st: Ability to process high-volume and high-diversity data.
+- 2nd: Real-time from the grounds up; a fundamental transition to event-centric
+  thinking
+
+
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-12-15 20:18:48
+
+[[file:The history of Data Integration/screenshot_2018-12-15_20-18-48.png]]
+
+This is an example of a retial web app, it *logs* product page view events, we
+want to *analyze* that in Hadoop, so on one hand we *stream* those events into a
+streaming platform and on the other hand Hadoop *subscribe* to the streaming
+platform and loads that data.
+
+
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-12-15 20:22:14
+[[file:The history of Data Integration/screenshot_2018-12-15_20-22-14.png]]
+
+
+Going one step further, as you add more downstream applications that need to
+consume the *same products events* but *process them differently*, you will
+notice that as you add those you don't have to add point-to-point connections
+with everything that produces the same data platform.
+
+
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-12-15 20:25:48
+[[file:The history of Data Integration/screenshot_2018-12-15_20-25-48.png]]
+
+- 3rd: Enable *forword-compatible* data architecture; the ability to add more
+  applications that need to process the same data differently. What it does mean
+  here, is the *ability to add more applications that might need to process data
+  differently*
+
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-12-15 20:35:45
+[[file:The history of Data Integration/screenshot_2018-12-15_20-35-45.png]]
+
+Why in ETL architecture we need to redefine the "T" when new app add in(forward
+compatilibity向前兼容). The image shown below is this scenario.
+
+
+If you add another data source, here more apps
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-12-15 20:35:26
+[[file:The history of Data Integration/screenshot_2018-12-15_20-35-26.png]]
+[NOTE]: drop PII fields: "PII" = personally identifiable information. only after
+this step the data can be really usable for the users.
+
+If you add another data destinations, here the cassandra
+[[file:The history of Data Integration/screenshot_2018-12-15_20-39-30.png]]
+
+
+
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-12-15 20:46:59
+[[file:The history of Data Integration/screenshot_2018-12-15_20-46-59.png]]
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-12-15 20:44:11
+[[file:The history of Data Integration/screenshot_2018-12-15_20-44-11.png]]
+
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-12-15 20:46:07
+[[file:The history of Data Integration/screenshot_2018-12-15_20-46-07.png]]
+
+Now the second implication on this "T", is you might wonder well if clean data
+is available up front then the "T" of ETL completely go away.
+
+For example, if you were to run a query like find me the top and popularly
+viewed products in a certain price segment, we now have to enrich this data
+,previously you know all the products events but filtered on PII fields when it
+is done.
+
+[[file:The history of Data Integration/screenshot_2018-12-15_20-54-19.png]]
+
+*Forward compatilibity* it actually stands for, let *extract clean* data *once*,
+let's then make it available to be *transformed* in *several different ways* to
+load it into the *respective* destinations.
+
+
+
+[[file:The history of Data Integration/screenshot_2018-12-15_21-00-00.png]]
+
+
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-12-15 21:00:55
+[[file:The history of Data Integration/screenshot_2018-12-15_21-00-55.png]]
+
+
+
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-12-15 21:01:48
+[[file:The history of Data Integration/screenshot_2018-12-15_21-01-48.png]]
+
+* Shiny future of ETL: a streaming platform.
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-12-15 21:02:36
+[[file:The history of Data Integration/screenshot_2018-12-15_21-02-36.png]] A new
+shiny future of ETL: all your *data is represented as streams*, the central
+streaming platform, it serves as a *storage layer* for your stream data, extract
+and load involves moving streams between external system and the central
+streaming platform, and *transformations* actually takes the shape and form of
+stream processing.
+
+
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-12-15 21:07:11
+[[file:The history of Data Integration/screenshot_2018-12-15_21-07-11.png]]
+
+
+1. Serves as the *real-time*, scalable *messaging bus* for applications; no EAI.
+2. Serves as the *source-of-truth* pipeline for feeding all data processing
+   destinations; Hadoop, DWH, NoSQL systems and more.
+3. Serves as the *building block* for stateful *stream processing* microservices
+   of applications, which all represent your company's business logic as stream
+   processing.
+
+
+[[file:The history of Data Integration/screenshot_2018-12-15_21-11-31.png]]
+
+* What does a streaming platform look like and how it enable streaming ETL.
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-12-15 21:16:10
+[[file:What does a streaming platform look like and how it enable streaming ETL./screenshot_2018-12-15_21-16-10.png]]
+
+
+- 1st: Kafka is the *de-facto Storage* choice of stream data.
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-12-15 21:28:44
+[[file:What does a streaming platform look like and how it enable streaming ETL./screenshot_2018-12-15_21-28-44.png]]
+
+This a diagram of a concept of a *persistent*, *replicated*, *right-ahead*, and
+*append-only* log. Where every record is identified using a unique index called
+an *offset*. the rights are only in the form of a pins readers, can use that
+*offset* and *index into* the log, and read messages *in order*.
+
+
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-12-15 21:33:03
+[[file:What does a streaming platform look like and how it enable streaming ETL./screenshot_2018-12-15_21-33-03.png]]
+
+
+- 2nd: Kafka offers a scalable *messaging* backbone for *application
+  integration*.(足记和星际家园)
+
+
+This is all we know about Kafka, and the core API in Kafka is the ~messaging
+API~.
+
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-12-15 22:03:29
+[[file:What does a streaming platform look like and how it enable streaming ETL./screenshot_2018-12-15_22-03-29.png]]
+
+
+
+- 3rd: Kafka enables building *Streaming data pipeline* CE & L in ETL.
+
+
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-12-15 22:04:24
+[[file:What does a streaming platform look like and how it enable streaming ETL./screenshot_2018-12-15_22-04-24.png]]
+
+
+The community added a ~connect API~ to Kafka, the core focus for ~connect API~
+is to make building thses *streaming data pipelines* from *external systems*
+into Kafka really easy and in an off-the-shelf manner.
+
+
+
+- 4th: Kafka is the basis for *Stream processing* and transformations.
+
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-12-15 22:07:40
+[[file:What does a streaming platform look like and how it enable streaming ETL./screenshot_2018-12-15_22-07-40.png]]
+
+Kafka added the ~steram API~, which allows you to essentially write stream
+processing *operators* or stream processing *programs* very easily.
+
+
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-12-15 22:10:02
+[[file:What does a streaming platform look like and how it enable streaming ETL./screenshot_2018-12-15_22-10-02.png]]
+
+dive a little into the ~connect and stream API~, because we really complete the
+vision for streaming ETL.
+
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-12-15 22:11:58
+[[file:What does a streaming platform look like and how it enable streaming ETL./screenshot_2018-12-15_22-11-58.png]]
+
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-12-15 22:12:39
+[[file:What does a streaming platform look like and how it enable streaming ETL./screenshot_2018-12-15_22-12-39.png]]
+
+Every company has multiple data centers, how to transfer data to keep all data
+centers in-sync.
+
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-12-15 22:14:46
+[[file:What does a streaming platform look like and how it enable streaming ETL./screenshot_2018-12-15_22-14-46.png]]
+
+
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-12-15 22:15:16
+
+[[file:What does a streaming platform look like and how it enable streaming ETL./screenshot_2018-12-15_22-15-16.png]]
+
+The most interesting ETL problem is as we talked about, *how do we make data
+from databases available to not just the warehouse but any other application
+that needs to use it*.
+
+
+One way is to sett a trigger, and scan the databases. The other way is to
+*stream the changelog* of a databse, *databases are rely on a commit log as a
+source of truth and tables are merely views of that commit log*. And the way
+databases replication works for the most part is by *shipping these changelogs*
+around. The changelog is abstraction of messages, which is essentially an
+*update*. So if you were to scan this changelogs on the very beginning and apply
+to an empty databases you can recreate the database.
+
+上面的描述中的 changelog 就非常类似 Kafka 中的 log. in fact Kafka has special
+support for supporting change logs. And these database connectors are in fact
+the most popular ones written on top of Kafka's ~connect API~.
+
+
+It actually has another cool advantage: By making these *changelogs* available
+in Kafka, now *transformations* become much *easier*, and they are much more
+*scalable*. Instead of *applying transformations* on either the source and the
+destinations databases. It can be made available *on replicated log*, which is a
+lot *faster*.So instead of moving data just blindly between the source and the
+destination, it *moves through Kafka*, you can *transform* it and *then* move it
+into *destination*.
+
+[[file:What does a streaming platform look like and how it enable streaming ETL./screenshot_2018-12-15_22-25-25.png]]
+
+
+
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-12-15 22:30:13
+[[file:What does a streaming platform look like and how it enable streaming ETL./screenshot_2018-12-15_22-30-13.png]]
+
+
+The core focus of Kafka's ~connect API~ is to really make writing these
+connectors super simple and off-the-shelf manner, and do all the hard work
+underneath the covers. It allows you to *one-way of monitoring all your
+connectors* and *most importantly it offers the option of carrying the source
+schema into all the destination systems*. Eg, if you add a column in your source
+database, now would carry this extra column seamlessly throughout the data
+pipeline and apply it to either the elastic index or a hive table, 而且整个过程
+是无感知的完成的.
+
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-12-15 22:46:33
+[[file:What does a streaming platform look like and how it enable streaming ETL./screenshot_2018-12-15_22-46-33.png]]
+
+
+You can now connect pretty large sett of sources and sink in a off-the-shelf
+manner using Kafka's ~connect API~.
+
+
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-12-15 23:06:23
+[[file:What does a streaming platform look like and how it enable streaming ETL./screenshot_2018-12-15_23-06-23.png]]
+
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-12-15 23:06:58
+[[file:What does a streaming platform look like and how it enable streaming ETL./screenshot_2018-12-15_23-06-58.png]]
+
+Transformations can have many forms: ~filter~, ~map~, ~join~ and ~aggretation~.
+
+
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-12-15 23:09:22
+[[file:What does a streaming platform look like and how it enable streaming ETL./screenshot_2018-12-15_23-09-22.png]]
+
+上面两种是流处理的两种不同vision(愿景or看待方式): 实时MapReduce层 和 事件驱动微服务.
+
+They really influenced what the solution looks like.
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-12-15 23:11:06
+[[file:What does a streaming platform look like and how it enable streaming ETL./screenshot_2018-12-15_23-11-06.png]]
+
+实时 mapreduce 层:
+
+1. 中心 cluster 运行大量处理, 且需要你把流处理代码表达成一个 ~job~, that is
+   packaged in a custom manner just like Hadoop is, it's deployed and monitored
+   in a custom manner, 也许你需要 yarn or mesos 做 fault-tolerance;
+2. 这种模型能为 *long-running analytical type of query where you want to run a
+   large multi tenant cluster* 更好服务.
+
+
+事件驱动微服务:
+
+非常不同于前者, think of applications as things that take input streams business
+logic, do stream processing, then produces output streams. If you think of that,
+all your stram processing engine really has to be a library that application
+developers can just embed and start using. 你只需要 kafka 和你的 app, 你不需要部
+署其他东西.
+
+The main focus for this vision is really to make stream processing available as
+a general-purpose programming paradigm, it's not niche thing but it is available
+across the company.
+
+
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-12-15 23:26:16
+[[file:What does a streaming platform look like and how it enable streaming ETL./screenshot_2018-12-15_23-26-16.png]]
+
+
+这里是一些 subscribe to the real-time mapreduce vision 的系统. While putting it
+into practice at LinkedIn, we learned that that what developers wanted was they
+wanted to continue developing their Java apps, what we asked them to do is to
+take *some part of the java app* and express it as a ~job~, and then talk to the
+stream processing people to get it deployed on their cluster. So that created
+sufficent friction in order to adopt stream processing at out LinkedIn
+wide-scale, so then we introduced another view point of this problem:
+
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-12-15 23:34:24
+[[file:What does a streaming platform look like and how it enable streaming ETL./screenshot_2018-12-15_23-34-24.png]]
+
+We came at it from the vendor in microservices vision, and created streams so
+streams is just a library, it's an API that you embed in your application and
+then you can do stream processing.
+
+
+[[file:What does a streaming platform look like and how it enable streaming ETL./screenshot_2018-12-15_23-35-57.png]]
+
+People who like the producers and consumers libraries, we give them a stream
+processor library. So as a result of that, what it looks like:
+
+- 1st Powerful and lighweight java libray; need just kafka and your app.
+- 2nd Convenient DSL with all sorts of operators: ~join()~, ~map()~, ~filter()~,
+  windowed aggretate etc.
+
+  The following is the code you might write, just an example the cliched word
+  count, you created a builder, you write your code to count the words and then in
+  this example, the output is just another Kafka topic, but you could send it to
+  any other extenal system, then you say start. The cool thing is you know you
+  might realize that you can take this code and run it on one instance and it will
+  run just fine, you can package it in a docker container and deploy it on mesos,
+  and your code dosen't have to change, 而且所有的负载均衡等问题都是无感知的自动处
+  理,因为他是构建在原生 kafka 上的.
+  #+DOWNLOADED: /tmp/screenshot.png @ 2018-12-15 23:47:15
+  [[file:What does a streaming platform look like and how it enable streaming ETL./screenshot_2018-12-15_23-47-15.png]]
+
+- 3rd True evet-at-a-time stream processing; no microbatching.
+- 4th Dataflow-style windowing based on evet-time; handles late-arriving data.
+
+  Inspired by Google's dataflow team, which all revolve around how to handle the
+  *late-arriving data*, without dig into too many details, the core insight is
+  that we must to accept there will be later arriving data in when processing
+  data in the streaming fasion. Let's differetiate between event time which is
+  when an event takes place in the real world, from processing time which is
+  when it actually gets processed. *And if you handle these two things
+  differently,* *then we might get correct results even as you get
+  later-arriving-data*. This is a pretty deep topic in an office on site.
+
+
+- 5th Out-of-the-box support for *local state*; supports fast stateful
+  processing.
+
+  kafka ~stream API~ really dose a cool thing is that: it has out-of-the-box
+  support for *local states*, this is essential, because of this feature *you
+  can build high throughput fast stream processor apps*
+
+  [[file:What does a streaming platform look like and how it enable streaming ETL./screenshot_2018-12-16_00-15-24.png]]
+
+  If you think about *state* and how do you manage *state* and apps.The
+  traditional way is stick that *state* in some kind of external database and
+  get done with it.
+
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-12-16 00:18:28
+[[file:What does a streaming platform look like and how it enable streaming ETL./screenshot_2018-12-16_00-18-28.png]]
+
+What stream API dose is it pushes this external database and *divide* it up into
+shards and makes it available as local embedded state. This local state could be
+a rockcd engine, could be an in-memory hash map, the concpet is that this is
+highly efficient, because your data is sharded the same way as your input
+streams. So all your processing can happen locally with the data available, you
+don't have to make external RPC calls and hence that is super efficient.
+
+More than that, this local state is fault-tolerance, because kafka and kafka
+stream API knows how to do load balancing, it loads balances your partitions. If
+an app instantce dies it automatically load balances, it moves that local state
+embedded database into the remaining instances that are still alive.
+
+- 6th Kafka's streams API allows reprocessing; useful to upgrade apps or do A/B
+  testing.
+
+[[file:What does a streaming platform look like and how it enable streaming ETL./screenshot_2018-12-16_01-11-26.png]]
+
+This is also a deeper topic in kafka.
+
+
+下面举例:
+
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-12-16 01:20:24
+[[file:What does a streaming platform look like and how it enable streaming ETL./screenshot_2018-12-16_01-20-24.png]]
+
+geo-region
+
+
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-12-16 01:21:07
+[[file:What does a streaming platform look like and how it enable streaming ETL./screenshot_2018-12-16_01-21-07.png]]
+
+vision 1:
+
+a cluster hosting all these user activity streams, you have to deploy this
+stream processing cluster, you write your code in the aggregation geo
+aggretation code, and deployed it as a ~job~ on this cluster, you might have
+counts and you want to serve it through the dashbord app, so now you use your
+external database and then you finally had your dashbord app that reads the
+counts and highlights it on that UI.
+
+
+vision 2:
+
+kafka Stream API allows the local engines to be queryable, so in your dashbord
+app you not only can store all those state or the aggregated numbers, you're
+also able to query it and display it on your dashboard.
+
+
+
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-12-16 01:36:18
+[[file:What does a streaming platform look like and how it enable streaming ETL./screenshot_2018-12-16_01-36-18.png]]
+
+Here I want to show that what "batch" processing really is.
+
+It is a style of processing where you can take a *window* of data and you process
+it and after you're done with that *window*, you shut down, then you wake up at a
+particular future point in time, you process the next *window* and you keep doing
+that.
+
+Compare that with traditional streams app, which is that when it finishes
+processing that window, it doesn't shut down it, but keeps going on, and keeps
+processing the next window as it arrives.
+
+
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-12-16 01:40:59
+[[file:What does a streaming platform look like and how it enable streaming ETL./screenshot_2018-12-16_01-40-59.png]]
+
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-12-16 01:41:27
+[[file:What does a streaming platform look like and how it enable streaming ETL./screenshot_2018-12-16_01-41-27.png]]
+
+
+#+DOWNLOADED: /tmp/screenshot.png @ 2018-12-16 01:41:37
+[[file:What does a streaming platform look like and how it enable streaming ETL./screenshot_2018-12-16_01-41-37.png]]
